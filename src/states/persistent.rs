@@ -6,14 +6,19 @@ pub type TermId = u64;
 pub type CandidateId = u64;
 
 /// A command to be applied on state machines
-pub struct Command {}
+pub enum Command {
+    /// tfar internal commands
+    Tfar {},
+    /// user defined commands
+    Client(Vec<u8>),
+}
 
 pub struct LogEntry {
     /// Command to be applied on state machine
-    command: Command,
+    pub command: Command,
     /// The term this log entry belongs to. None empty when this entry
     /// was received by leader.
-    term: Option<TermId>,
+    pub term: Option<TermId>,
 }
 
 /// persistent state on all servers in Raft cluster.
@@ -34,6 +39,10 @@ impl PersistentState {
             voted_for:    Option::None,
             log:          Vec::new(),
         }
+    }
+
+    pub fn term(&self) -> TermId {
+        self.current_term
     }
 
     /// create a new PersistentState for a vote
