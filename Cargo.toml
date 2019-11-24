@@ -1,0 +1,7 @@
+[package]
+name = "tfar"
+version = "0.1.0"
+authors = ["zhxiaog <zhxiaog@outlook.com>"]
+edition = "2018"
+
+[dependencies]
