@@ -1,4 +1,5 @@
 use super::{
+    events::StateEvent,
     internal::{InternalState, ServerId, VoteResult},
     persistent::{CandidateId, LogEntry, PersistentState, TermId},
     volatile::{LeaderVolatileState, LogEntryIndex, ServerVolatileState},
@@ -13,50 +14,6 @@ struct StateMachine {
     state: ServerState,
 }
 
-enum StateEvent {
-    Timeout(Duration),
-    VoteRequest {
-        /// candidate's term
-        term: TermId,
-        /// candidate requesting vote
-        candidate_id: CandidateId,
-        /// index of candidate's last log entry
-        last_log_index: LogEntryIndex,
-        /// term of candidate's last log entry
-        last_log_term: TermId,
-        /// candidator id, this field is an extention by tfar
-        candidator_id: ServerId,
-    },
-    VoteResponse {
-        /// Current Term from requested server, for candidate to update itself
-        term: TermId,
-        /// true means candidate received vote
-        vote_granted: bool,
-        /// response server, this field is an extention by tfar
-        server_id: ServerId,
-    },
-    AppendEntriesRequest {
-        /// leader's term
-        term: TermId,
-        /// leader id, for followers to redirect clients
-        leader_id: ServerId,
-        /// index of log entry immediately precedding new entries
-        prev_log_index: LogEntryIndex,
-        /// term of log entry immediately precedding new entries
-        prev_log_term: TermId,
-        /// new entries
-        entries: Vec<LogEntry>,
-        /// leader's commit index
-        leader_commit: LogEntryIndex,
-    },
-    AppendEntriesResponse {
-        /// current Term, for leader to update itself
-        term: TermId,
-        /// true if follower contained entry matching prevLogIndex and prefLogTerm in request
-        success: bool,
-    },
-}
-
 impl StateMachine {
     pub fn new() -> StateMachine {
         StateMachine {
@@ -67,9 +24,9 @@ impl StateMachine {
             },
         }
     }
-    pub fn on_message(self, msg: StateEvent) -> StateMachine {
+    pub fn on_events(self, event: StateEvent) -> StateMachine {
         use StateEvent::*;
-        match msg {
+        match event {
             Timeout(timeout) => self.become_candidate(),
             VoteResponse { term, vote_granted, server_id } => {
                 if term > self.state.term() {

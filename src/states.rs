@@ -1,3 +1,4 @@
+pub mod events;
 mod internal;
 mod persistent;
 mod state_machine;
