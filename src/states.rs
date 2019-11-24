@@ -1,23 +1,22 @@
 mod persistent;
+mod state_machine;
 mod volatile;
 
-pub use volatile::LeaderVolatileState;
-pub use volatile::LogEntryIndex;
-pub use volatile::ServerVolatileState;
+pub use volatile::{LeaderVolatileState, LogEntryIndex, ServerVolatileState};
 
-pub use persistent::CandidateId;
-pub use persistent::Command;
-pub use persistent::LogEntry;
-pub use persistent::PersistentState;
-pub use persistent::TermId;
+pub use persistent::{CandidateId, Command, LogEntry, PersistentState, TermId};
 
 /// The three states for servers in Raft cluter
 pub enum ServerState {
     /// The one and only leader in cluster
-    Leader,
+    Leader {
+        persistent: PersistentState,
+        volatile:   ServerVolatileState,
+        leader:     LeaderVolatileState,
+    },
     /// A server with an ongoing election
-    Candidate,
-    /// A server waiting for requests from other servers(vote, append entries 
+    Candidate { persistent: PersistentState, volatile: ServerVolatileState },
+    /// A server waiting for requests from other servers(vote, append entries
     /// and snapshot)
-    Follower,
+    Follower { persistent: PersistentState, volatile: ServerVolatileState },
 }

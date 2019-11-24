@@ -31,8 +31,34 @@ impl PersistentState {
     pub fn new() -> PersistentState {
         PersistentState {
             current_term: 0,
-            voted_for: Option::None,
-            log: Vec::new(),
+            voted_for:    Option::None,
+            log:          Vec::new(),
+        }
+    }
+
+    /// create a new PersistentState for a vote
+    pub fn with_vote(self, term: TermId, candidate: CandidateId) -> PersistentState {
+        PersistentState {
+            current_term: term,
+            voted_for:    Some(candidate),
+            log:          self.log,
+        }
+    }
+
+    /// Create a new PersistentState by cloning current state with a new term
+    pub fn with_new_term(self, term: TermId) -> PersistentState {
+        PersistentState {
+            current_term: term,
+            voted_for:    None,
+            log:          self.log,
+        }
+    }
+    /// create a new PersistentState by increase term
+    pub fn incr_term(self) -> PersistentState {
+        PersistentState {
+            current_term: self.current_term + 1,
+            voted_for:    None,
+            log:          self.log,
         }
     }
 }
