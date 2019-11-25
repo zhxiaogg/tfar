@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 async-trait = "0.1.19"
+log = "0.4"

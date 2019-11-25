@@ -1,6 +1,6 @@
 use super::{
     internal::ServerId,
-    persistent::{CandidateId, LogEntry, TermId},
+    persistent::{LogEntry, TermId},
     volatile::LogEntryIndex,
 };
 use std::time::Duration;
@@ -11,13 +11,11 @@ pub enum StateEvent {
         /// candidate's term
         term: TermId,
         /// candidate requesting vote
-        candidate_id: CandidateId,
+        candidate_id: ServerId,
         /// index of candidate's last log entry
         last_log_index: LogEntryIndex,
         /// term of candidate's last log entry
         last_log_term: TermId,
-        /// candidator id, this field is an extention by tfar
-        candidator_id: ServerId,
     },
     VoteResponse {
         /// Current Term from requested server, for candidate to update itself
