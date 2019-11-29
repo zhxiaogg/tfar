@@ -1,8 +1,7 @@
 use async_trait::async_trait;
-mod follower;
+pub mod follower;
 
 use super::events::StateEvent;
-pub use follower::Follower;
 
 #[async_trait]
 pub trait StateMachine {

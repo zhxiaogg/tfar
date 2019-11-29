@@ -1,8 +1,4 @@
-use super::{
-    internal::ServerId,
-    persistent::{LogEntry, TermId},
-    volatile::LogEntryIndex,
-};
+use super::states::{LogEntry, LogEntryIndex, ServerId, TermId};
 use std::time::Duration;
 
 pub enum StateEvent {

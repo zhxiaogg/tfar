@@ -1,9 +1,7 @@
 use super::StateMachine;
-use crate::states::{
+use crate::state_machine::{
     events::StateEvent,
-    internal::{InternalState, ServerId, VoteResult},
-    persistent::{LogEntry, PersistentState, TermId},
-    volatile::{LeaderVolatileState, LogEntryIndex, ServerVolatileState},
+    states::{InternalState, LeaderVolatileState, LogEntry, LogEntryIndex, PersistentState, ServerId, ServerVolatileState, TermId, VoteResult},
 };
 use async_trait::async_trait;
 use log::{debug, error, info};
