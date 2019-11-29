@@ -1,5 +1,7 @@
 use async_trait::async_trait;
+pub mod candidate;
 pub mod follower;
+pub mod leader;
 
 use super::events::StateEvent;
 

@@ -1,7 +1,7 @@
-use super::StateMachine;
+use super::{candidate::Candidate, StateMachine};
 use crate::state_machine::{
     events::StateEvent,
-    states::{InternalState, LeaderVolatileState, LogEntry, LogEntryIndex, PersistentState, ServerId, ServerVolatileState, TermId, VoteResult},
+    states::{InternalState, LogEntry, LogEntryIndex, PersistentState, ServerId, ServerVolatileState, TermId, VoteResult},
 };
 use async_trait::async_trait;
 use log::{debug, error, info};
@@ -14,12 +14,8 @@ pub struct Follower {
 }
 
 impl Follower {
-    pub fn new() -> Follower {
-        Follower {
-            persistent: PersistentState::new(),
-            volatile:   ServerVolatileState::new(),
-            internal:   InternalState::new(),
-        }
+    pub fn new(persistent: PersistentState, volatile: ServerVolatileState, internal: InternalState) -> Follower {
+        Follower { persistent, volatile, internal }
     }
 }
 
@@ -37,7 +33,7 @@ impl StateMachine for Follower {
             } => {
                 if self.persistent.can_vote(term, candidate_id, last_log_index, last_log_term) {
                     // we granted the vote request
-                    Box::new(self.vote(term, candidate_id).await)
+                    Box::new(self.vote_for(term, candidate_id).await)
                 } else if self.persistent.is_new_term(term) {
                     // we denied the request, but we found a new term.
                     // TODO: make sure this is supported by the paper
@@ -53,14 +49,10 @@ impl StateMachine for Follower {
 }
 
 impl Follower {
-    async fn become_candidate(self) -> Follower {
+    async fn become_candidate(self) -> Candidate {
         // TODO: write storage
         let Follower { persistent, volatile, internal } = self;
-        Follower {
-            persistent: persistent.incr_term(),
-            volatile:   volatile,
-            internal:   internal,
-        }
+        Candidate::new(persistent.incr_term(), volatile, internal.clear_voting())
     }
 
     async fn new_term(self, term: TermId) -> Follower {
@@ -73,7 +65,7 @@ impl Follower {
         }
     }
 
-    async fn vote(self, term: TermId, candidate_id: ServerId) -> Follower {
+    async fn vote_for(self, term: TermId, candidate_id: ServerId) -> Follower {
         // TODO: write storage
         let Follower { persistent, volatile, internal } = self;
         Follower {

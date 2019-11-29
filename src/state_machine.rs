@@ -1,4 +1,4 @@
 pub mod events;
 mod machines;
 pub mod states;
-pub use machines::{follower::Follower, StateMachine};
+pub use machines::{candidate::Candidate, follower::Follower, leader::Leader, StateMachine};

@@ -25,7 +25,7 @@ pub enum VoteResult {
 pub struct InternalState {
     /// list of servers in Raft cluster
     servers: Vec<Server>,
-    /// A possibly ongoing Vot event. None emtpy for candidate server.
+    /// A possibly ongoing Vot event. Should be non-emtpy for candidate server.
     voting: Option<Voting>,
 }
 
@@ -34,13 +34,17 @@ impl InternalState {
         InternalState { servers: Vec::new(), voting: None }
     }
 
+    pub fn clear_voting(self) -> InternalState {
+        InternalState { servers: self.servers, voting: None }
+    }
+
     /// creates a new states with a vote response
-    pub fn with_vote(self, server: ServerId, agree: bool) -> InternalState {
+    pub fn with_vote(self, server: ServerId, granted: bool) -> InternalState {
         match self {
-            InternalState { servers, voting: None } => panic!("there is no ongoing vote!"),
+            InternalState { servers: _, voting: None } => panic!("there is no ongoing vote!"),
             InternalState { servers, voting: Some(voting) } => InternalState {
                 servers,
-                voting: Some(voting.vote(server, agree)),
+                voting: Some(voting.accept_vote(server, granted)),
             },
         }
     }
@@ -55,7 +59,8 @@ impl InternalState {
 }
 
 impl Voting {
-    fn vote(self, server: ServerId, agree: bool) -> Voting {
+    /// create a new Voting by updating current one with an vote result
+    fn accept_vote(self, server: ServerId, agree: bool) -> Voting {
         let Voting { mut agrees, mut rejects } = self;
         if agree && agrees.contains(&server) || !agree && rejects.contains(&server) {
             eprintln!("server {} has voted!", server);
@@ -67,6 +72,7 @@ impl Voting {
         Voting { agrees, rejects }
     }
 
+    /// check whether or or this voting has been granted
     fn vote_granted(&self, num_servers: usize) -> VoteResult {
         let num_valid = num_servers / 2 + 1;
         let agrees = self.agrees.len();
