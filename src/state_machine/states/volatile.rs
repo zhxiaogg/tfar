@@ -1,4 +1,4 @@
-pub type LogEntryIndex = u64;
+use super::LogEntryIndex;
 const LOG_ENTRY_INDEX_ZERO: LogEntryIndex = 0;
 
 /// volatile state for all servers in Raft cluster.

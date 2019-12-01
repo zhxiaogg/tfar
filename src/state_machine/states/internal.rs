@@ -1,7 +1,5 @@
+use super::ServerId;
 use std::collections::HashSet;
-
-/// Represents the server id
-pub type ServerId = usize;
 
 /// Represents a node in Raft cluster
 pub struct Server {
@@ -27,24 +25,35 @@ pub struct InternalState {
     servers: Vec<Server>,
     /// A possibly ongoing Vot event. Should be non-emtpy for candidate server.
     voting: Option<Voting>,
+    /// current leader id
+    leader: Option<ServerId>,
 }
 
 impl InternalState {
     pub fn new() -> InternalState {
-        InternalState { servers: Vec::new(), voting: None }
+        InternalState {
+            servers: Vec::new(),
+            voting:  None,
+            leader:  None,
+        }
     }
 
     pub fn clear_voting(self) -> InternalState {
-        InternalState { servers: self.servers, voting: None }
+        InternalState {
+            servers: self.servers,
+            voting:  None,
+            leader:  self.leader,
+        }
     }
 
     /// creates a new states with a vote response
     pub fn with_vote(self, server: ServerId, granted: bool) -> InternalState {
         match self {
-            InternalState { servers: _, voting: None } => panic!("there is no ongoing vote!"),
-            InternalState { servers, voting: Some(voting) } => InternalState {
+            InternalState { voting: None, .. } => panic!("there is no ongoing vote!"),
+            InternalState { servers, voting: Some(voting), leader } => InternalState {
                 servers,
                 voting: Some(voting.accept_vote(server, granted)),
+                leader,
             },
         }
     }
@@ -52,8 +61,18 @@ impl InternalState {
     /// Check if an ongoint voting gets granted.
     pub fn vote_granted(&self) -> VoteResult {
         match self {
-            InternalState { servers: _, voting: None } => panic!("there is no ongoing vote!"),
-            InternalState { servers, voting: Some(ref voting) } => voting.vote_granted(servers.len()),
+            InternalState { voting: None, .. } => panic!("there is no ongoing vote!"),
+            InternalState { servers, voting: Some(ref voting), .. } => voting.vote_granted(servers.len()),
+        }
+    }
+
+    /// update with a new leader
+    pub fn with_leader(self, new_leader: ServerId) -> InternalState {
+        let InternalState { servers, .. } = self;
+        InternalState {
+            servers: servers,
+            voting:  None,
+            leader:  Some(new_leader),
         }
     }
 }

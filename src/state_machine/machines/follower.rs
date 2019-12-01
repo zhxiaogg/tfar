@@ -25,16 +25,11 @@ impl StateMachine for Follower {
         use StateEvent::*;
         match event {
             Timeout(_) => Box::new(self.become_candidate().await),
-            VoteRequest {
-                term,
-                candidate,
-                last_log_index,
-                last_log_term,
-            } => {
-                if self.persistent.can_vote(term, candidate, last_log_index, last_log_term) {
+            VoteRequest { term, candidate, last_log } => {
+                if self.persistent.accept_vote(term, candidate, &last_log) {
                     // we granted the vote request
                     Box::new(self.vote_for(term, candidate).await)
-                } else if self.persistent.is_new_term(term) {
+                } else if self.persistent.accept_term(term) {
                     // we denied the request, but we found a new term.
                     // TODO: make sure this is supported by the paper
                     Box::new(self.new_term(term).await)

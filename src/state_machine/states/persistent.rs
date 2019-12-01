@@ -1,4 +1,4 @@
-use super::{internal::ServerId, volatile::LogEntryIndex};
+use super::{LogEntryId, LogEntryIndex, ServerId};
 use std::clone::Clone;
 
 /// In Raft, time are devided into terms, they are in arbitrary length,
@@ -46,25 +46,25 @@ impl PersistentState {
         self.current_term
     }
 
-    pub fn can_vote(&self, term: TermId, candiate: ServerId, last_log_index: LogEntryIndex, last_log_term: TermId) -> bool {
+    pub fn accept_vote(&self, term: TermId, candidate: ServerId, last_log: &LogEntryId) -> bool {
         let candidate_match = match self.voted_for {
             None => true,
-            Some(c) if c <= candiate => true,
+            Some(c) if c == candidate => true,
             _ => false,
         };
-        let newer_log = self.accept_log(last_log_index, last_log_term);
+        let newer_log = self.accept_log(last_log);
         term >= self.current_term && candidate_match && newer_log
     }
 
-    pub fn accept_log(&self, last_log_index: LogEntryIndex, last_log_term: TermId) -> bool {
+    pub fn accept_log(&self, last_log: &LogEntryId) -> bool {
         if let Some(log) = self.log.last() {
-            last_log_term >= log.term.unwrap_or(0) && last_log_index >= log.index
+            last_log.term >= log.term.unwrap_or(0) && last_log.index >= log.index
         } else {
             true
         }
     }
 
-    pub fn is_new_term(&self, term: TermId) -> bool {
+    pub fn accept_term(&self, term: TermId) -> bool {
         self.current_term < term
     }
 
@@ -77,7 +77,8 @@ impl PersistentState {
         }
     }
 
-    pub fn with_log_entries(self, entries: Vec<LogEntry>) -> PersistentState {
+    /// TOOD: append log entries according to preceding log entry info
+    pub fn with_log_entries(self, prev_log: LogEntryId, entries: Vec<LogEntry>) -> PersistentState {
         let mut new_entries = Vec::new();
         new_entries.extend(entries.iter().cloned());
         new_entries.extend(self.log.iter().cloned());

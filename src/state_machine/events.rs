@@ -1,4 +1,4 @@
-use super::states::{LogEntry, LogEntryIndex, ServerId, TermId};
+use super::states::{LogEntry, LogEntryId, LogEntryIndex, ServerId, TermId};
 use std::time::Duration;
 
 pub enum StateEvent {
@@ -8,10 +8,8 @@ pub enum StateEvent {
         term: TermId,
         /// candidate requesting vote
         candidate: ServerId,
-        /// index of candidate's last log entry
-        last_log_index: LogEntryIndex,
-        /// term of candidate's last log entry
-        last_log_term: TermId,
+        /// id of candidate's last log entry
+        last_log: LogEntryId,
     },
     VoteResponse {
         /// Current Term from requested server, for candidate to update itself
@@ -25,15 +23,13 @@ pub enum StateEvent {
         /// leader's term
         term: TermId,
         /// leader id, for followers to redirect clients
-        leader_id: ServerId,
-        /// index of log entry immediately precedding new entries
-        prev_log_index: LogEntryIndex,
-        /// term of log entry immediately precedding new entries
-        prev_log_term: TermId,
+        leader: ServerId,
+        /// id of log entry immediately precedding new entries
+        prev_log: LogEntryId,
         /// new entries
         entries: Vec<LogEntry>,
         /// leader's commit index
-        leader_commit: LogEntryIndex,
+        commit_idx: LogEntryIndex,
     },
     AppendEntriesResponse {
         /// current Term, for leader to update itself
