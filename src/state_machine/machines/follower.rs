@@ -27,13 +27,13 @@ impl StateMachine for Follower {
             Timeout(_) => Box::new(self.become_candidate().await),
             VoteRequest {
                 term,
-                candidate_id,
+                candidate,
                 last_log_index,
                 last_log_term,
             } => {
-                if self.persistent.can_vote(term, candidate_id, last_log_index, last_log_term) {
+                if self.persistent.can_vote(term, candidate, last_log_index, last_log_term) {
                     // we granted the vote request
-                    Box::new(self.vote_for(term, candidate_id).await)
+                    Box::new(self.vote_for(term, candidate).await)
                 } else if self.persistent.is_new_term(term) {
                     // we denied the request, but we found a new term.
                     // TODO: make sure this is supported by the paper
@@ -65,11 +65,11 @@ impl Follower {
         }
     }
 
-    async fn vote_for(self, term: TermId, candidate_id: ServerId) -> Follower {
+    async fn vote_for(self, term: TermId, candidate: ServerId) -> Follower {
         // TODO: write storage
         let Follower { persistent, volatile, internal } = self;
         Follower {
-            persistent: persistent.with_new_term(term).with_vote_for(candidate_id),
+            persistent: persistent.with_new_term(term).with_vote_for(candidate),
             volatile:   volatile,
             internal:   internal,
         }

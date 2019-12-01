@@ -1,4 +1,5 @@
 use super::{internal::ServerId, volatile::LogEntryIndex};
+use std::clone::Clone;
 
 /// In Raft, time are devided into terms, they are in arbitrary length,
 /// and there will be at most one leader in each term. Terms are consecutive
@@ -13,6 +14,7 @@ pub enum Command {
     Client(Vec<u8>),
 }
 
+#[derive(Clone)]
 pub struct LogEntry {
     /// The term this log entry belongs to. None empty when this entry
     /// was received by leader.
@@ -50,12 +52,16 @@ impl PersistentState {
             Some(c) if c <= candiate => true,
             _ => false,
         };
-        let newer_log = if let Some(log) = self.log.last() {
+        let newer_log = self.accept_log(last_log_index, last_log_term);
+        term >= self.current_term && candidate_match && newer_log
+    }
+
+    pub fn accept_log(&self, last_log_index: LogEntryIndex, last_log_term: TermId) -> bool {
+        if let Some(log) = self.log.last() {
             last_log_term >= log.term.unwrap_or(0) && last_log_index >= log.index
         } else {
             true
-        };
-        term >= self.current_term && candidate_match && newer_log
+        }
     }
 
     pub fn is_new_term(&self, term: TermId) -> bool {
@@ -68,6 +74,17 @@ impl PersistentState {
             current_term: term,
             voted_for:    Some(candidate),
             log:          self.log,
+        }
+    }
+
+    pub fn with_log_entries(self, entries: Vec<LogEntry>) -> PersistentState {
+        let mut new_entries = Vec::new();
+        new_entries.extend(entries.iter().cloned());
+        new_entries.extend(self.log.iter().cloned());
+        PersistentState {
+            current_term: self.current_term,
+            voted_for:    self.voted_for,
+            log:          new_entries,
         }
     }
 

@@ -7,7 +7,7 @@ pub enum StateEvent {
         /// candidate's term
         term: TermId,
         /// candidate requesting vote
-        candidate_id: ServerId,
+        candidate: ServerId,
         /// index of candidate's last log entry
         last_log_index: LogEntryIndex,
         /// term of candidate's last log entry

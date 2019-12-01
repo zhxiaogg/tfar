@@ -31,6 +31,17 @@ impl ServerVolatileState {
             last_applied: LOG_ENTRY_INDEX_ZERO,
         }
     }
+
+    pub fn with_commit_index(self, new_commit_index: LogEntryIndex) -> ServerVolatileState {
+        if (new_commit_index > self.commit_index) {
+            ServerVolatileState {
+                commit_index: new_commit_index,
+                last_applied: self.last_applied,
+            }
+        } else {
+            self
+        }
+    }
 }
 
 impl LeaderVolatileState {
