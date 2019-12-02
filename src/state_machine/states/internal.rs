@@ -2,6 +2,7 @@ use super::ServerId;
 use std::collections::HashSet;
 
 /// Represents a node in Raft cluster
+#[derive(PartialEq)]
 pub struct Server {
     address: String,
     port:    u16,
@@ -74,6 +75,10 @@ impl InternalState {
             voting:  None,
             leader:  Some(new_leader),
         }
+    }
+
+    pub fn has_leader(&self, leader: ServerId) -> bool {
+        self.leader.contains(&leader)
     }
 }
 
