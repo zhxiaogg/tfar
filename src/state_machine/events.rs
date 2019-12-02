@@ -36,5 +36,7 @@ pub enum StateEvent {
         term: TermId,
         /// true if follower contained entry matching prevLogIndex and prefLogTerm in request
         success: bool,
+        /// response server, this field is an extention by tfar
+        server:ServerId,
     },
 }

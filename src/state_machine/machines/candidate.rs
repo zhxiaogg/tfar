@@ -18,6 +18,7 @@ impl StateMachine for Candidate {
             Timeout(_) => Box::new(self.become_candidate().await),
             VoteResponse { term, vote_granted, server_id } => {
                 if term <= self.term() {
+                    // TODO: become leader?
                     Box::new(self.with_vote(vote_granted, server_id))
                 } else {
                     Box::new(self.become_follower(term).await)
@@ -44,10 +45,10 @@ impl StateMachine for Candidate {
                     Box::new(self)
                 } else if self.accept_leader_state(&prev_log) {
                     // found a new leader
-                    Box::new(self.become_follower_on_new_leader_with_entries(term, leader, prev_log, entries, commit_idx))
+                    Box::new(self.become_follower_on_new_leader_with_entries(term, leader, prev_log, entries, commit_idx).await)
                 } else {
                     // found a new leader, but the state didn't match
-                    Box::new(self.become_follower_on_new_leader(term, leader, commit_idx))
+                    Box::new(self.become_follower_on_new_leader(term, leader, commit_idx).await)
                 }
             },
             AppendEntriesResponse { .. } => panic!("unrecognized event."),
@@ -65,7 +66,9 @@ impl Candidate {
     }
 
     fn accept_vote(&self, term: TermId, candidate: ServerId, last_log: &LogEntryId) -> bool {
-        self.persistent.accept_vote(term, candidate, last_log)
+        let candidate_match = self.persistent.accept_candidate(candidate);
+        let newer_log = self.persistent.accept_log(last_log);
+        term >= self.term() && candidate_match && newer_log
     }
     /// create a new candidate by updating current one with a vote response
     fn with_vote(self, granted: bool, server_id: ServerId) -> Candidate {
@@ -115,7 +118,7 @@ impl Candidate {
         self.persistent.accept_log(&prev_log)
     }
 
-    fn become_follower_on_new_leader_with_entries(self, term: TermId, leader: ServerId, prev_log: LogEntryId, entries: Vec<LogEntry>, leader_commit: LogEntryIndex) -> Follower {
+    async fn become_follower_on_new_leader_with_entries(self, term: TermId, leader: ServerId, prev_log: LogEntryId, entries: Vec<LogEntry>, leader_commit: LogEntryIndex) -> Follower {
         // TODO: write storage
         let Candidate { persistent, volatile, internal } = self;
         let persistent = persistent.with_new_term(term).with_log_entries(prev_log, entries);
@@ -124,7 +127,7 @@ impl Candidate {
         Follower::new(persistent, volatile, internal)
     }
 
-    fn become_follower_on_new_leader(self, term: TermId, leader: ServerId, leader_commit: LogEntryIndex) -> Follower {
+    async fn become_follower_on_new_leader(self, term: TermId, leader: ServerId, leader_commit: LogEntryIndex) -> Follower {
         // TODO: write storage
         let Candidate { persistent, volatile, internal } = self;
         let persistent = persistent.with_new_term(term);

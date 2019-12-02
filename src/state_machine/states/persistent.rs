@@ -46,14 +46,12 @@ impl PersistentState {
         self.current_term
     }
 
-    pub fn accept_vote(&self, term: TermId, candidate: ServerId, last_log: &LogEntryId) -> bool {
-        let candidate_match = match self.voted_for {
+    pub fn accept_candidate(&self, candidate: ServerId) -> bool {
+        match self.voted_for {
             None => true,
             Some(c) if c == candidate => true,
             _ => false,
-        };
-        let newer_log = self.accept_log(last_log);
-        term >= self.current_term && candidate_match && newer_log
+        }
     }
 
     pub fn accept_log(&self, last_log: &LogEntryId) -> bool {

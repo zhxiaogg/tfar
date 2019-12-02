@@ -26,7 +26,7 @@ impl StateMachine for Follower {
         match event {
             Timeout(_) => Box::new(self.become_candidate().await),
             VoteRequest { term, candidate, last_log } => {
-                if self.persistent.accept_vote(term, candidate, &last_log) {
+                if self.accept_vote(term, candidate, &last_log) {
                     // we granted the vote request
                     Box::new(self.vote_for(term, candidate).await)
                 } else if self.persistent.accept_term(term) {
@@ -87,6 +87,12 @@ impl Follower {
 
     fn accept_new_leader(&self, term: TermId) -> bool {
         term > self.persistent.term()
+    }
+
+    fn accept_vote(&self, term: TermId, candidate: ServerId, last_log: &LogEntryId) -> bool {
+        let candidate_match = self.persistent.accept_candidate(candidate);
+        let newer_log = self.persistent.accept_log(last_log);
+        term >= self.persistent.term() && candidate_match && newer_log
     }
 
     fn accept_logs(&self, term: TermId, server: ServerId, prev_log: &LogEntryId) -> bool {
